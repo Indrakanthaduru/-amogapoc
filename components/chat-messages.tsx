@@ -21,7 +21,7 @@ interface ChatSection {
 }
 
 interface ChatMessagesProps {
-  sections: ChatSection[] // Changed from messages to sections
+  sections: ChatSection[]
   onQuerySelect: (query: string) => void
   status: UseChatHelpers<UIMessage<unknown, UIDataTypes, UITools>>['status']
   chatId?: string
@@ -46,16 +46,13 @@ export function ChatMessages({
   reload,
   error
 }: ChatMessagesProps) {
-  // Track user-modified states (when user explicitly opens/closes)
   const [userModifiedStates, setUserModifiedStates] = useState<
     Record<string, boolean>
   >({})
-  // Cache tool counts for performance optimization
   const toolCountCacheRef = useRef<Map<string, number>>(new Map())
   const isLoading = status === 'submitted' || status === 'streaming'
   const isMobile = useMediaQuery('(max-width: 767px)')
 
-  // Tool types definition - moved outside function for performance
   const toolTypes = [
     'tool-search',
     'tool-fetch',
@@ -63,21 +60,14 @@ export function ChatMessages({
     'tool-relatedQuestions'
   ]
 
-  // Clear cache during streaming to ensure accurate tool counts
   useEffect(() => {
     if (isLoading) {
-      // Clear cache for all messages during streaming
       toolCountCacheRef.current.clear()
     }
   }, [isLoading])
 
-  // Calculate the offset height based on device type
-  // Note: pt-14 (56px) on scroll-container must be included in desktop offset
-  const offsetHeight = isMobile
-    ? 208 // Mobile: larger offset for mobile header/input
-    : 196 // Desktop: smaller offset (140px) + pt-14 (56px)
+  const offsetHeight = isMobile ? 208 : 196
 
-  // Extract citation maps from all messages in all sections
   const allCitationMaps = useMemo(() => {
     const allMessages: UIMessage[] = []
     sections.forEach(section => {
@@ -89,27 +79,20 @@ export function ChatMessages({
 
   if (!sections.length) return null
 
-  // Check if loading indicator should be shown
   const showLoading = status === 'submitted' || status === 'streaming'
 
-  // Helper function to get tool count with caching
   const getToolCount = (message?: UIMessage): number => {
     if (!message || !message.id) return 0
 
-    // During streaming, always recalculate
     if (isLoading) {
-      const count =
+      return (
         message.parts?.filter(part => toolTypes.includes(part.type)).length || 0
-      return count
+      )
     }
 
-    // Check cache first when not streaming
     const cached = toolCountCacheRef.current.get(message.id)
-    if (cached !== undefined) {
-      return cached
-    }
+    if (cached !== undefined) return cached
 
-    // Calculate and cache
     const count =
       message.parts?.filter(part => toolTypes.includes(part.type)).length || 0
     toolCountCacheRef.current.set(message.id, count)
@@ -122,33 +105,18 @@ export function ChatMessages({
     hasNextPart?: boolean,
     message?: UIMessage
   ) => {
-    // If user has explicitly modified this state, use that
     if (userModifiedStates.hasOwnProperty(id)) {
       return userModifiedStates[id]
     }
 
-    // For tool types, check if there are multiple tools
     if (partType && toolTypes.includes(partType)) {
       const toolCount = getToolCount(message)
-      // If multiple tools exist, default to closed
-      if (toolCount > 1) {
-        return false
-      }
-      // Single tool results stay open even if more content follows
-      return true
+      return toolCount <= 1
     }
 
-    // For tool-invocations, default to open
-    if (partType === 'tool-invocation') {
-      return true
-    }
+    if (partType === 'tool-invocation') return true
+    if (partType === 'reasoning') return !hasNextPart
 
-    // For reasoning, auto-collapse if there's a next part in the same message
-    if (partType === 'reasoning') {
-      return !hasNextPart
-    }
-
-    // For other types (like text), default to open
     return true
   }
 
@@ -173,7 +141,7 @@ export function ChatMessages({
       <div className="relative mx-auto w-full max-w-full md:max-w-3xl px-4">
         {sections.map((section, sectionIndex) => (
           <div
-            key={section.id}
+            key={`${section.id}-${sectionIndex}`}
             id={`section-${section.id}`}
             className="chat-section pb-14"
             style={
@@ -204,13 +172,15 @@ export function ChatMessages({
 
             {/* Assistant messages */}
             {section.assistantMessages.map((assistantMessage, messageIndex) => {
-              // Check if this is the latest assistant message in the latest section
               const isLatestMessage =
                 sectionIndex === sections.length - 1 &&
                 messageIndex === section.assistantMessages.length - 1
 
               return (
-                <div key={assistantMessage.id} className="flex flex-col gap-4">
+                <div
+                  key={`${assistantMessage.id}-${messageIndex}`}
+                  className="flex flex-col gap-4"
+                >
                   <RenderMessage
                     message={assistantMessage}
                     messageId={assistantMessage.id}
@@ -231,12 +201,13 @@ export function ChatMessages({
                 </div>
               )
             })}
-            {/* Show loading after assistant messages */}
+
             {showLoading && sectionIndex === sections.length - 1 && (
               <div className="flex justify-start py-4">
                 <AnimatedLogo className="h-10 w-10" />
               </div>
             )}
+
             {sectionIndex === sections.length - 1 && (
               <ChatError error={error} />
             )}
