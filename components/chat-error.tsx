@@ -3,13 +3,25 @@ import { AlertCircle } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 
 interface ChatErrorProps {
-  error: Error | string | null | undefined
+  error: unknown
 }
 
 export function ChatError({ error }: ChatErrorProps) {
   if (!error) return null
 
-  let errorMessage = error instanceof Error ? error.message : error
+  let errorMessage: string
+
+  if (error instanceof Error) {
+    errorMessage = error.message
+  } else if (typeof error === 'string') {
+    errorMessage = error
+  } else if (typeof error === 'object' && error !== null) {
+    // Handle API error objects like {type, code, message, param}
+    const errObj = error as Record<string, unknown>
+    errorMessage = (errObj.message as string) || (errObj.error as string) || JSON.stringify(error)
+  } else {
+    errorMessage = String(error)
+  }
 
   // Try to parse JSON error response and extract user-friendly message
   try {
