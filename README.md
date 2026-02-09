@@ -164,7 +164,7 @@ Host your own live version of Morphic with Vercel or Docker.
 
 ### Vercel
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fmiurla%2Fmorphic&env=DATABASE_URL,OPENAI_API_KEY,TAVILY_API_KEY,SERPER_API_KEY)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fmarkondasaketh30%2F-amogapoc&env=DATABASE_URL,OPENAI_API_KEY,TAVILY_API_KEY,SERPER_API_KEY)
 
 **Note**: For Vercel deployments, set `ENABLE_AUTH=true` and configure Supabase authentication to secure your deployment.
 
