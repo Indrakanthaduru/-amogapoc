@@ -37,6 +37,12 @@ export function LoginForm({
     setIsLoading(true)
     setError(null)
 
+    if (!supabase) {
+      setError('Authentication is not configured')
+      setIsLoading(false)
+      return
+    }
+
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email,
@@ -57,6 +63,12 @@ export function LoginForm({
     const supabase = createClient()
     setIsLoading(true)
     setError(null)
+
+    if (!supabase) {
+      setError('Authentication is not configured')
+      setIsLoading(false)
+      return
+    }
 
     try {
       const { error } = await supabase.auth.signInWithOAuth({

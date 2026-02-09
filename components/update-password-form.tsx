@@ -32,6 +32,12 @@ export function UpdatePasswordForm({
     setIsLoading(true)
     setError(null)
 
+    if (!supabase) {
+      setError('Authentication is not configured')
+      setIsLoading(false)
+      return
+    }
+
     try {
       const { error } = await supabase.auth.updateUser({ password })
       if (error) throw error
