@@ -37,17 +37,18 @@ export function getModel(modelName?: string): LanguageModel {
   }
 
   // Determine the active provider and its default model based on environment variables
-  if (process.env.OPENAI_API_KEY) {
-    return registry.languageModel('gpt-4o'); // Default OpenAI model
-  } else if (process.env.GOOGLE_API_KEY) {
-    return registry.languageModel('gemini-pro'); // Default Google model
+  // Gemini (Google) is now the primary default
+  if (process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
+    return registry.languageModel('google/gemini-1.5-flash'); // Default Google model
+  } else if (process.env.OPENAI_API_KEY) {
+    return registry.languageModel('openai/gpt-4o'); // Fallback to OpenAI model
   } else if (process.env.GROQ_API_KEY) {
-    return registry.languageModel('llama3-8b-8192'); // Default Groq model
+    return registry.languageModel('groq/llama3-8b-8192'); // Fallback to Groq model
   } else if (process.env.ANTHROPIC_API_KEY) {
-    return registry.languageModel('claude-3-opus-20240229'); // Default Anthropic model
+    return registry.languageModel('anthropic/claude-3-opus-20240229'); // Fallback to Anthropic model
   }
-  // Fallback: If no specific API key is set, still default to OpenAI's model
-  return registry.languageModel('gpt-4o');
+  // Fallback: If no specific API key is set, default to Gemini's model
+  return registry.languageModel('google/gemini-1.5-flash');
 }
 
 export function isProviderEnabled(providerId: string): boolean {
@@ -57,7 +58,7 @@ export function isProviderEnabled(providerId: string): boolean {
     case 'anthropic':
       return !!process.env.ANTHROPIC_API_KEY
     case 'google':
-      return !!process.env.GOOGLE_API_KEY
+      return !!process.env.GOOGLE_GENERATIVE_AI_API_KEY
     case 'openai-compatible':
       return (
         !!process.env.OPENAI_COMPATIBLE_API_KEY &&
