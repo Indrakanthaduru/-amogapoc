@@ -94,10 +94,11 @@ export function selectModel({
   }
 
   // If no model could be resolved through preferences, find the first enabled default.
-  if (isProviderEnabled('openai')) {
+  // Gemini (Google) is now the primary default
+  if (isProviderEnabled('google')) {
+    return { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash', provider: 'Google', providerId: 'google' }
+  } else if (isProviderEnabled('openai')) {
     return { id: 'gpt-4o', name: 'GPT-4o', provider: 'OpenAI', providerId: 'openai' }
-  } else if (isProviderEnabled('google')) {
-    return { id: 'gemini-pro', name: 'Gemini Pro', provider: 'Google', providerId: 'google' }
   } else if (isProviderEnabled('groq')) {
     return { id: 'llama3-8b-8192', name: 'Llama 3 8B', provider: 'Groq', providerId: 'groq' }
   } else if (isProviderEnabled('anthropic')) {
@@ -106,7 +107,7 @@ export function selectModel({
 
   // Final fallback if no providers are enabled at all. This will likely result in a 404 or 500 error later.
   console.warn(
-    '[ModelSelection] No enabled AI providers found. Falling back to hardcoded OpenAI model.'
+    '[ModelSelection] No enabled AI providers found. Falling back to hardcoded Gemini model.'
   )
-  return { id: 'gpt-4o-mini', name: 'GPT-4o Mini', provider: 'OpenAI', providerId: 'openai' }
+  return { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash', provider: 'Google', providerId: 'google' }
 }
