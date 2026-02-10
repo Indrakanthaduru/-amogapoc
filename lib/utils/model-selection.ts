@@ -6,12 +6,6 @@ import { Model } from '@/lib/types/models'
 import { SearchMode } from '@/lib/types/search'
 import { isProviderEnabled } from '@/lib/utils/registry'
 
-const DEFAULT_MODEL: Model = {
-  id: 'gpt-4o-mini',
-  name: 'GPT-4o Mini',
-  provider: 'OpenAI',
-  providerId: 'openai'
-}
 
 const VALID_MODEL_TYPES: ModelType[] = ['speed', 'quality']
 const MODE_FALLBACK_ORDER: SearchMode[] = ['quick', 'adaptive']
@@ -55,7 +49,8 @@ function resolveModelForModeAndType(
  * 1. If model type is in cookie -> use corresponding model from config (when enabled)
  * 2. Otherwise -> use default ordering (speed → quality) for the active mode
  * 3. If the active mode has no enabled models, try remaining modes
- * 4. If config loading fails or providers are unavailable -> use DEFAULT_MODEL as fallback
+ * 4. If all explicit config lookups fail, dynamically determine a default based on enabled API keys.
+ * 5. As a final last resort, return a hardcoded OpenAI model (which will likely fail if no keys are enabled).
  */
 export function selectModel({
   cookieStore,
@@ -98,13 +93,20 @@ export function selectModel({
     }
   }
 
-  if (!isProviderEnabled(DEFAULT_MODEL.providerId)) {
-    console.warn(
-      `[ModelSelection] Default model provider "${DEFAULT_MODEL.providerId}" is not enabled. Returning default model configuration.`
-    )
+  // If no model could be resolved through preferences, find the first enabled default.
+  if (isProviderEnabled('openai')) {
+    return { id: 'gpt-4o', name: 'GPT-4o', provider: 'OpenAI', providerId: 'openai' }
+  } else if (isProviderEnabled('google')) {
+    return { id: 'gemini-pro', name: 'Gemini Pro', provider: 'Google', providerId: 'google' }
+  } else if (isProviderEnabled('groq')) {
+    return { id: 'llama3-8b-8192', name: 'Llama 3 8B', provider: 'Groq', providerId: 'groq' }
+  } else if (isProviderEnabled('anthropic')) {
+    return { id: 'claude-3-opus-20240229', name: 'Claude 3 Opus', provider: 'Anthropic', providerId: 'anthropic' }
   }
 
-  return DEFAULT_MODEL
+  // Final fallback if no providers are enabled at all. This will likely result in a 404 or 500 error later.
+  console.warn(
+    '[ModelSelection] No enabled AI providers found. Falling back to hardcoded OpenAI model.'
+  )
+  return { id: 'gpt-4o-mini', name: 'GPT-4o Mini', provider: 'OpenAI', providerId: 'openai' }
 }
-
-export { DEFAULT_MODEL }
